@@ -165,7 +165,7 @@ def start(stdsrc):
 def print_help():
     console.send_message("""    commands:
     start
-    build graph
+    graph
     exit""", curses. color_pair(1))
     for i in range(4):
         console.transport_to_next_line()
@@ -208,7 +208,9 @@ def test():
     word_count = len(text.split())
     speed = int(word_count / test_time * 60)
 
-    console.send_message(f"your spped: {speed} your error {error_count}", curses.color_pair(2))
+    console.send_message(f"your spped: {speed}", curses.color_pair(2))
+    console.transport_to_next_line()
+    console.send_message(f"your error {error_count}", curses.color_pair(2))
     console.transport_to_next_line()
 
     current_tests.append(str(Test(word_count=word_count,
@@ -226,7 +228,7 @@ def work(stdsrc):
         console.clear()
         if message == "start":
             test()
-        if message == "build graph":
+        if message == "graph":
             build_graph()
         if message == "exit":
             break
