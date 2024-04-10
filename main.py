@@ -218,7 +218,7 @@ def test():
                               speed=speed,
                               test_time=test_time)))
 
-def work(stdsrc):
+def game(stdsrc):
     while True:
         print_help()
         message = console.get_message(is_blind=False)
@@ -260,7 +260,7 @@ def end(stdsrc):
 
 def main():
     curses.wrapper(start)
-    curses.wrapper(work)
+    curses.wrapper(game)
     curses.wrapper(end)
 
 if __name__ == "__main__":
