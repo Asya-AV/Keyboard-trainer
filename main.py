@@ -5,147 +5,15 @@ import matplotlib.pyplot as plt
 import random
 import sys
 import time
+import source.consoles
+import source.fileutils
+import source.tests
 
 end_of_input = ["\n", "\t"]
 
-class Test():
-    def __init__(self, word_count = 0, error_count = 0, speed = 0, test_time = 0):
-        self.word_count = word_count
-        self.error_count = error_count
-        self.speed = speed
-        self.test_time = test_time
-
-    def __str__(self):
-        return str(self.word_count) + " " + str(self.error_count) + " " + str(self.speed) + " " + str(self.test_time)
-
-    def getList(self):
-        return [self.word_count, self.error_count, self.speed]
-
 current_tests = []
-
-class FileUtils():
-    @staticmethod
-    def get_all_data(name_of_file):
-        with open(name_of_file, "r", encoding="utf-8") as file:
-            all_data = json.load(file)
-        return all_data
-
-    @staticmethod
-    def set_all_data(name_of_file, all_data):
-        with open(name_of_file, "w", encoding="utf-8") as file:
-            json.dump(all_data, file, indent=2)
-
-    @staticmethod
-    def uplouad_count_of_test():
-        all_data = FileUtils.get_all_data("source/data.json")
-        count_of_test = all_data["count of elements"]
-        return count_of_test
-
-    @staticmethod
-    def load_all_test():
-        all_data = FileUtils.get_all_data("source/data.json")
-        all_test = all_data["data of tests"]
-        return all_test
-
-    @staticmethod
-    def upload_test():
-        count_of_test = FileUtils.uplouad_count_of_test()
-        all_test = FileUtils.load_all_test()
-
-        global current_tests
-
-        all_test += current_tests
-        count_of_test += len(current_tests)
-
-        all_data = FileUtils.get_all_data("source/data.json")
-
-        all_data["data of tests"] = all_test
-        all_data["count of elements"] = count_of_test
-
-        FileUtils.set_all_data("source/data.json" , all_data)
-        current_tests = []
-
-    @staticmethod
-    def save_name(name):
-        all_config = FileUtils.get_all_data("source/config.json")
-
-        all_config["name"] = name
-
-        FileUtils.set_all_data("source/config.json", all_config)
-
-    @staticmethod
-    def get_name():
-        all_config = FileUtils.get_all_data("source/config.json")
-        name = all_config["name"]
-        return name
-
-    @staticmethod
-    def get_all_sentenses():
-        all_sentenses = []
-        with open("source/sentenses.txt", encoding="utf-8") as file:
-            for line in file:
-                line = line[:-1]
-                all_sentenses.append(line)
-        return all_sentenses
-
-class Console():
-    def __init__(self):
-        self.stdsrc = curses.initscr()
-
-        self.str_count = 0
-        self.index_in_str = 0
-        self.stdsrc.clear()
-
-    def transport_to_next_line(self):
-        self.str_count += 1
-        self.index_in_str = 0
-
-    def send_message(self, message, color, without_move=False):
-        self.stdsrc.addstr(self.str_count, self.index_in_str, message, color)
-        if not without_move:
-            temp = self.index_in_str + len(message)
-            self.index_in_str = temp % curses.COLS
-            self.str_count += temp // curses.COLS
-            self.stdsrc.refresh()
-            if len(message) >= 1 and message[-1] == "\n":
-                self.transport_to_next_line()
-
-    def get_char(self):
-        return self.stdsrc.getkey()
-
-    def get_message(self, is_blind=True):
-        start_srt = self.str_count
-        start_index_in_srt = self.index_in_str
-        message = ""
-        while True:
-            key = self.get_char()
-
-            if key == "KEY_BACKSPACE":
-                if self.index_in_str != start_index_in_srt or self.str_count != start_srt:
-                    if self.index_in_str == 0:
-                        self.str_count -= 1
-                        self.index_in_str = curses.COLS - 1;
-                    else:
-                        self.index_in_str -= 1
-                    self.stdsrc.addstr(self.str_count, self.index_in_str, " ")
-                    message = message[:-1]
-                continue
-            else:
-                if not is_blind:
-                    self.send_message(key, curses.color_pair(2))
-                message += key
-            if key in end_of_input:
-                break
-        return message
-
-    def clear(self):
-        self.stdsrc.clear()
-        self.stdsrc.refresh()
-        self.str_count = 0
-        self.index_in_str = 0
-
 all_sentenses = []
-console = Console()
+console = source.consoles.Console()
 
 def initialize():
     console.send_message("enter your name: ", curses.color_pair(1))
@@ -157,10 +25,10 @@ def start(stdsrc):
     curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
     name = initialize()
-    FileUtils.save_name(name)
+    source.fileutils.FileUtils.save_name(name)
     console.send_message("hello " + name, curses.color_pair(1))
     global all_sentenses
-    all_sentenses = FileUtils.get_all_sentenses()
+    all_sentenses = source.fileutils.FileUtils.get_all_sentenses()
 
 def print_help():
     console.send_message("""    commands:
@@ -213,7 +81,7 @@ def test():
     console.send_message(f"your error {error_count}", curses.color_pair(2))
     console.transport_to_next_line()
 
-    current_tests.append(str(Test(word_count=word_count,
+    current_tests.append(str(tests.Test(word_count=word_count,
                               error_count=error_count,
                               speed=speed,
                               test_time=test_time)))
@@ -237,8 +105,9 @@ def game(stdsrc):
             console.transport_to_next_line()
 
 def build_graph():
-    FileUtils.upload_test()
-    all_test = FileUtils.load_all_test()
+    source.fileutils.FileUtils.upload_test(current_tests)
+    current_tests = []
+    all_test = source.fileutils.FileUtils.load_all_test()
     x = []
     y_speed = []
     y_error = []
@@ -256,7 +125,9 @@ def build_graph():
     plt.show()
 
 def end(stdsrc):
-   FileUtils.upload_test()
+   global current_tests
+   source.fileutils.FileUtils.upload_test(current_tests)
+   current_tests = []
 
 def main():
     curses.wrapper(start)
@@ -265,4 +136,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
